@@ -1,0 +1,10 @@
+{
+  "description": "Donut.",
+  "image": "https://storage.googleapis.com/opensea-prod", 
+  "name": "Donut",
+  "attributes": [
+  {"trait_type": "Form", "value": "Blue"},
+  {"trait_type": "Taste", "value": "yummy"},
+  {"trait_type": "Topping", "value": "Sprinkles"} 
+  ] 
+}
