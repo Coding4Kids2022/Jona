@@ -12,8 +12,8 @@ contract NFT is ERC721 {
 
       
 
-    mapping (address => uint256) private NFT_counter;
-    mapping (address => bool) private Whitelist;
+    mapping (address => uint256) NFT_counter;
+    mapping (address => bool) Whitelist;
     
 
     constructor(string memory link) ERC721("WhaleEye", "WEye") {
@@ -23,8 +23,8 @@ contract NFT is ERC721 {
     function mint(address recipient) public 
     returns (string memory)
     {
-        require((NFT_counter[recipient] < 2), "Error: Recipient has too many NFTs");
-        require((Whitelist[recipient] == true), "Error: Recipient is not whitelisted");
+        require((NFT_counter[recipient] < 2), string("Error: Recipient has too many NFTs"));
+        require((Whitelist[recipient] == true), string("Error: Recipient is not whitelisted"));
         currentTokenID += 1;
         uint256 newItemID = currentTokenID;
         _safeMint(recipient, newItemID);
