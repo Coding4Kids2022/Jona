@@ -9,7 +9,7 @@ address constant ADMIN = 0x3dEca47CfCB97E2a03a31bcAEe47d55B80bF8981;
 contract NFT is ERC721 {
     uint256 private currentTokenID;
     string public url;
-    uint256 min_price = 1000000000000000000;
+    uint256 min_price = 0.1 ether;
 
     constructor(string memory link) ERC721("WhaleEye", "WEye") {
         url = link;
@@ -20,7 +20,7 @@ contract NFT is ERC721 {
     mapping (address => bool) Whitelist;
 
     modifier cost() {
-        require(msg.value >= 1 * 1000000000000000000, "Error: Not enough money sent");
+        require(msg.value >= 0.1 ether, "Error: Not enough money sent");
         _;
     }
 
@@ -44,15 +44,15 @@ contract NFT is ERC721 {
         _;
     }
 
-    function mint(address recipient) payable public cost() is_whitelisted(recipient) NFT_count(recipient) max_NFTs() returns (string memory) {
-        if (is_auction_enabled() == false) {
+    function mint(address recipient) payable public cost() is_whitelisted(recipient) NFT_count(recipient) max_NFTs() returns (string memory) {         
+        if (auction_enabled = false) {
             currentTokenID += 1;
             _safeMint(recipient, currentTokenID);
-            payable(ADMIN).transfer(address(this).balance - 10000000000000000);
+            payable(ADMIN).transfer(address(this).balance - 0.01 ether);
             NFT_counter[recipient] = NFT_counter[recipient] + 1;
             return Strings.toString(currentTokenID);
         }
-        
+
         else {
             revert("Error: Currently only auctions are available");
         }
@@ -92,19 +92,14 @@ contract NFT is ERC721 {
     }
 
     modifier top_bid() {
-        require((Bids[msg.sender] > min_price), "Error: Bid is lower than the minimum");
-        require((Bids[msg.sender] > current_bid), "Error: Your bid does not top the highest bid");
+        require((msg.value > min_price), "Error: Bid is lower than the minimum");
+        require((msg.value > current_bid), "Error: Your bid does not top the highest bid");
         _;
     }
     
-    function is_auction_enabled() view public returns (bool){
-        if (auction_enabled == false) {
-            return false;
-        }
-        
-        else {
-            return true;
-        }
+    modifier is_auction_enabled() {
+        require((auction_enabled == true), "Auctions are disabled right now");
+        _;
     }
 
     function enable_auction() public is_admin()  {
@@ -122,7 +117,7 @@ contract NFT is ERC721 {
         Bidders[Bidders.length + 1] = payable(msg.sender);
     }
     
-    function create_auction() public does_auction_exist(false) {
+    function create_auction() public is_auction_enabled() does_auction_exist(false) {
         current_bid = 0;
         auction_available = true;
     }
@@ -136,3 +131,5 @@ contract NFT is ERC721 {
         }
     }
 }
+
+//enable_auction ausbauen
