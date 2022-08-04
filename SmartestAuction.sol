@@ -1,21 +1,50 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./lib.sol";
-import "./Auction.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-//import "./Ownable.sol";
 
-contract NFT is ERC721, lib {
+address constant ADMIN = 0x3dEca47CfCB97E2a03a31bcAEe47d55B80bF8981;
+
+contract NFT is ERC721 {
     uint256 private currentTokenID;
     string public url;
-    
+    uint256 min_price = 1000000000000000000;
+
     constructor(string memory link) ERC721("WhaleEye", "WEye") {
         url = link;
+        Whitelist[ADMIN] = true;
     }
 
-    function mint(address recipient) payable public cost() is_whitelisted(recipient) NFT_count(recipient) max_NFTs(currentTokenID) returns (string memory) {
+    mapping (address => uint256) NFT_counter;
+    mapping (address => bool) Whitelist;
+
+    modifier cost() {
+        require(msg.value >= 1 * 1000000000000000000, "Error: Not enough money sent");
+        _;
+    }
+
+    modifier is_admin() {
+            require((msg.sender == ADMIN), "No admin permission");
+            _;
+        }
+
+    modifier is_whitelisted(address recipient) {
+        require((Whitelist[recipient] == true), "Error: Recipient is not whitelisted");
+        _;
+    }
+
+    modifier NFT_count(address recipient) {
+        require((NFT_counter[recipient] < 2), "Error: Recipient has too many NFTs");
+        _;
+    }
+
+    modifier max_NFTs() {
+        require((currentTokenID <= 3), "Error: NFTs sold out");
+        _;
+    }
+
+    function mint(address recipient) payable public cost() is_whitelisted(recipient) NFT_count(recipient) max_NFTs() returns (string memory) {
         if (is_auction_enabled() == false) {
             currentTokenID += 1;
             _safeMint(recipient, currentTokenID);
@@ -53,13 +82,18 @@ contract NFT is ERC721, lib {
     uint256 public current_bid;
     address public highest_bidder;
     bool public auction_available;
-
-    mapping(address => uint256) Bids;
-    address[] Bidders;
+    mapping (address => uint256) Bids;
+    address payable [] Bidders;
     
     modifier does_auction_exist(bool on_off) {
         if (on_off = false) {require((auction_available = false), "Error: Currently, there is an auction available");}
         else {require((auction_available = true), "Error: Currently, there is no auction available");}
+        _;
+    }
+
+    modifier top_bid() {
+        require((Bids[msg.sender] > min_price), "Error: Bid is lower than the minimum");
+        require((Bids[msg.sender] > current_bid), "Error: Your bid does not top the highest bid");
         _;
     }
     
@@ -73,23 +107,19 @@ contract NFT is ERC721, lib {
         }
     }
 
-    function enable_auction() public lib.is_admin()  {
+    function enable_auction() public is_admin()  {
         auction_enabled = true;
     }
 
-    function disable_auction() public lib.is_admin() {
+    function disable_auction() public is_admin() {
         auction_enabled = false;
     }
 
-    function bid() public payable does_auction_exist(true) lib.is_whitelisted(msg.sender) {
-        if (msg.value > current_bid) {
-            highest_bidder = msg.sender;
-            current_bid = msg.value;
-        }
-        
-        else {
-            revert("Error: Bid is too low");
-        }
+    function add_to_bid() public payable does_auction_exist(true) is_whitelisted(msg.sender) top_bid() {
+        Bids[msg.sender] += msg.value;
+        highest_bidder = msg.sender;
+        current_bid = Bids[msg.sender];
+        Bidders[Bidders.length + 1] = payable(msg.sender);
     }
     
     function create_auction() public does_auction_exist(false) {
@@ -99,10 +129,10 @@ contract NFT is ERC721, lib {
 
     function close_auction() public does_auction_exist(true) {
         auction_available = false;
-        mint(highest_bidder);
+        _safeMint(highest_bidder, currentTokenID);
         Bids[highest_bidder] = 0;
         for (uint256 i = 0; i < Bidders.length;) {
-
+            Bidders[i].transfer(Bids[Bidders[i]]);
         }
     }
 }
