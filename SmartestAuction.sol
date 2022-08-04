@@ -30,7 +30,7 @@ contract NFT is ERC721 {
         }
 
     modifier is_whitelisted(address recipient) {
-        require((Whitelist[recipient] == true), "Error: Recipient is not whitelisted");
+        require((Whitelist[recipient] == true), "Error: Address is not whitelisted");
         _;
     }
 
@@ -110,14 +110,14 @@ contract NFT is ERC721 {
         auction_enabled = false;
     }
 
-    function add_to_bid() public payable does_auction_exist(true) is_whitelisted(msg.sender) top_bid() {
+    function add_to_bid() public payable NFT_count(msg.sender) does_auction_exist(true) is_whitelisted(msg.sender) top_bid() {
         Bids[msg.sender] += msg.value;
         highest_bidder = msg.sender;
         current_bid = Bids[msg.sender];
-        Bidders[Bidders.length + 1] = payable(msg.sender);
+        Bidders.push(payable(msg.sender));
     }
     
-    function create_auction() public is_auction_enabled() does_auction_exist(false) {
+    function create_auction() public max_NFTs() is_auction_enabled() does_auction_exist(false) {
         current_bid = 0;
         auction_available = true;
     }
@@ -133,3 +133,5 @@ contract NFT is ERC721 {
 }
 
 //enable_auction ausbauen
+//test closing auction
+//disable disabling auction when not allowed to
