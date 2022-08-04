@@ -1,0 +1,47 @@
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+contract randomizer{
+    uint256 nonce;
+    uint randomnumber;
+    bool[7] chambered_rounds;
+    uint current_round;
+    string fail;
+
+    function reroll() public returns (string memory) {
+        chambered_rounds[randomnumber] = false;
+        randomnumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce))) % 6;
+        nonce++;
+        current_round = 0;
+        chambered_rounds[randomnumber] = true;
+        return Strings.toString(randomnumber);
+    }
+
+    function read() view public returns (uint) {
+        return randomnumber;
+    }
+
+    function readrounds() view public returns (bool[7] memory) {
+        return chambered_rounds;
+    }
+
+    function shoot() public {
+        if (chambered_rounds[current_round] = true) {
+            result = string("fail");
+            reroll();
+        }
+        else {
+            current_round++;
+            result = string("success");
+        }
+    }
+
+    function tofailornottofail() view public returns (string memory) {
+        return fail;
+    }
+}
+
+
+//broken
