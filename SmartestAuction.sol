@@ -132,6 +132,6 @@ contract NFT is ERC721 {
     }
 }
 
-//enable_auction ausbauen
+//create_auction ausbauen
 //test closing auction
 //disable disabling auction when not allowed to
