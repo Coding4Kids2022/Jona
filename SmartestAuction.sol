@@ -9,7 +9,7 @@ address constant ADMIN = 0x3dEca47CfCB97E2a03a31bcAEe47d55B80bF8981;
 contract NFT is ERC721 {
     uint256 private currentTokenID;
     string public url;
-    uint256 min_price = 0.1 ether;
+    uint256 min_price;
 
     constructor(string memory link) ERC721("WhaleEye", "WEye") {
         url = link;
@@ -82,8 +82,8 @@ contract NFT is ERC721 {
     uint256 public current_bid;
     address public highest_bidder;
     bool public auction_available;
-    mapping (address => uint256) Bids;
-    address payable [] Bidders;
+    mapping (address => uint256) public Bids;
+    address payable [] public Bidders;
     
     modifier does_auction_exist(bool on_off) {
         if (on_off = false) {require((auction_available = false), "Error: Currently, there is an auction available");}
@@ -91,12 +91,6 @@ contract NFT is ERC721 {
         _;
     }
 
-    modifier top_bid() {
-        require((msg.value > min_price), "Error: Bid is lower than the minimum");
-        require((msg.value > current_bid), "Error: Your bid does not top the highest bid");
-        _;
-    }
-    
     modifier is_auction_enabled() {
         require((auction_enabled == true), "Auctions are disabled right now");
         _;
@@ -106,32 +100,45 @@ contract NFT is ERC721 {
         auction_enabled = true;
     }
 
-    function disable_auction() public is_admin() {
+    function disable_auction() public does_auction_exist(false) is_admin() {
         auction_enabled = false;
     }
 
-    function add_to_bid() public payable NFT_count(msg.sender) does_auction_exist(true) is_whitelisted(msg.sender) top_bid() {
+    function add_to_bid() public payable NFT_count(msg.sender) does_auction_exist(true) is_whitelisted(msg.sender) {
+        require(((Bids[msg.sender] += msg.value) > min_price), "Error: Bid is lower than the minimum");
+        require(((Bids[msg.sender] += msg.value) > current_bid), "Error: Your bid does not top the highest bid");
         Bids[msg.sender] += msg.value;
-        highest_bidder = msg.sender;
-        current_bid = Bids[msg.sender];
+        highest_bidder = msg.sender; 
+        current_bid = Bids[msg.sender]; 
         Bidders.push(payable(msg.sender));
     }
     
-    function create_auction() public max_NFTs() is_auction_enabled() does_auction_exist(false) {
+    function create_auction(uint256 minimum_price) public max_NFTs() is_auction_enabled() does_auction_exist(false) {
         current_bid = 0;
         auction_available = true;
+        min_price = minimum_price;
     }
 
     function close_auction() public does_auction_exist(true) {
         auction_available = false;
         _safeMint(highest_bidder, currentTokenID);
-        Bids[highest_bidder] = 0;
-        for (uint256 i = 0; i < Bidders.length;) {
+        Bids[highest_bidder] = 0; 
+        for (uint256 i = 0; i < Bidders.length; i++) {
             Bidders[i].transfer(Bids[Bidders[i]]);
         }
+        highest_bidder = address(0);
+        current_bid = 0;
+        for (uint256 i = 0; i< Bidders.length; i++) {
+            Bids[Bidders[i]] = 0;
+        }
+        delete Bidders;
+    }
+
+    function testing() public {
+        add_to_whitelist(0x0D821AEFaB67ADe8053f9DBA5653B69D418413Ed);
+        enable_auction();
+        create_auction(0.1 ether);
     }
 }
 
-//create_auction ausbauen
-//test closing auction
-//disable disabling auction when not allowed to
+//Bids[msg.sender] 3x the expected value
