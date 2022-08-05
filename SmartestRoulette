@@ -6,13 +6,18 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 contract randomizer{
     uint256 nonce;
     uint randomnumber;
-    bool[7] chambered_rounds;
+    bool[6] chambered_rounds;
     uint current_round;
-    string fail;
+    string result;
 
     function reroll() public returns (string memory) {
-        chambered_rounds[randomnumber] = false;
-        randomnumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce))) % 6;
+        chambered_rounds[0] = false;
+        chambered_rounds[1] = false;
+        chambered_rounds[2] = false;
+        chambered_rounds[3] = false;
+        chambered_rounds[4] = false;
+        chambered_rounds[5] = false;
+        randomnumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce))) % 5;
         nonce++;
         current_round = 0;
         chambered_rounds[randomnumber] = true;
@@ -20,10 +25,12 @@ contract randomizer{
     }
 
     function read() view public returns (uint) {
-        return randomnumber;
+        uint round;
+        round = randomnumber + 1;
+        return round;
     }
 
-    function readrounds() view public returns (bool[7] memory) {
+    function readrounds() view public returns (bool[6] memory) {
         return chambered_rounds;
     }
 
@@ -39,9 +46,6 @@ contract randomizer{
     }
 
     function tofailornottofail() view public returns (string memory) {
-        return fail;
+        return result;
     }
 }
-
-
-//broken
